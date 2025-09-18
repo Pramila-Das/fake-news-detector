@@ -1,24 +1,45 @@
 import streamlit as st
 import pickle
 
-# 1. App title
-st.title("📰 AI-Based Fake News Detector")
-st.write("Paste a news headline or article below to check if it's Real or Fake.")
+# =========================
+# 1. App Configuration
+# =========================
+st.set_page_config(
+    page_title="AI Fake News Detector",
+    page_icon="📰",
+    layout="centered"
+)
 
-# 2. Sidebar info
-st.sidebar.title("About Project")
+# =========================
+# 2. App Title & Description
+# =========================
+st.markdown("<h1 style='text-align: center; color: #4B0082;'>📰 AI-Based Fake News Detector</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size:18px;'>Paste a news headline or article below to check if it's Real or Fake.</p>", unsafe_allow_html=True)
+st.markdown("---")
+
+# =========================
+# 3. Sidebar Info
+# =========================
+st.sidebar.header("About Project")
 st.sidebar.write("**Dataset:** `data.csv`")
 st.sidebar.write("**Model Accuracy:** 97%")
 st.sidebar.write("**Built by:** Pramila Das")
+st.sidebar.write("**Instructions:** Enter at least 5 characters for a reliable prediction.")
 
-# 3. Load trained model
+# =========================
+# 4. Load Trained Model
+# =========================
 with open("fake_news_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-# 4. User input
-user_input = st.text_area("Enter news text:")
+# =========================
+# 5. User Input
+# =========================
+user_input = st.text_area("Enter news text here:", height=150)
 
-# 5. Input validation & prediction
+# =========================
+# 6. Prediction Button & Logic
+# =========================
 if st.button("Predict"):
     if not user_input.strip():
         st.warning("⚠️ Please enter some text to classify.")
@@ -26,11 +47,17 @@ if st.button("Predict"):
         st.info("ℹ️ Input too short to classify reliably.")
     else:
         prediction = model.predict([user_input])[0]
-        if prediction == 1:
-            st.success("✅ Prediction: Real News")
-        else:
-            st.error("❌ Prediction: Fake News")
+        prediction_prob = model.predict_proba([user_input])[0]
+        confidence = max(prediction_prob) * 100  # confidence %
 
-# 6. Footer / credits
+        if prediction == 1:
+            st.success(f"✅ Prediction: Real News ({confidence:.2f}% confident)")
+            st.balloons()  # Fun effect for real news
+        else:
+            st.error(f"❌ Prediction: Fake News ({confidence:.2f}% confident)")
+
+# =========================
+# 7. Footer / Credits
+# =========================
 st.markdown("---")
-st.markdown("Made with ❤️ by Pramila Das")
+st.markdown("<p style='text-align: center;'>Made with ❤️ by <b>Pramila Das</b></p>", unsafe_allow_html=True)
