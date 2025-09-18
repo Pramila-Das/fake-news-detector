@@ -71,13 +71,3 @@ Pramila Das
             st.info("A confirmation email has been sent to your email!")
         except Exception as e:
             st.error(f"Error sending email: {e}")
-
-# ---------------------------
-# Display Contributions
-# ---------------------------
-st.header("All Contributions")
-if os.path.exists("user_contributions.csv"):
-    contrib_df = pd.read_csv("user_contributions.csv")
-    st.dataframe(contrib_df)
-else:
-    st.info("No contributions yet.")
