@@ -1,60 +1,36 @@
 import streamlit as st
 import pickle
-import pandas as pd
 
-# Load the trained model
+# 1. App title
+st.title("📰 AI-Based Fake News Detector")
+st.write("Paste a news headline or article below to check if it's Real or Fake.")
+
+# 2. Sidebar info
+st.sidebar.title("About Project")
+st.sidebar.write("**Dataset:** `data.csv`")
+st.sidebar.write("**Model Accuracy:** 97%")
+st.sidebar.write("**Built by:** Pramila Das")
+
+# 3. Load trained model
 with open("fake_news_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-st.title("📰 Fake News Detection App")
+# 4. User input
+user_input = st.text_area("Enter news text:")
 
-# Sidebar
-st.sidebar.title("About Project")
-st.sidebar.write("Dataset: `data.csv`")
-st.sidebar.write("Model Accuracy: 97%")
-st.sidebar.write("Built by **Pramila Das**")
-
-# Initialize session state for history
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# User input
-user_input = st.text_area("Enter a news headline or article:", "")
-
-if st.button("Check"):
-    if user_input.strip() != "":
-        # Predict
-        prediction = model.predict([user_input])[0]
-        probabilities = model.predict_proba([user_input])[0]
-        confidence = round(max(probabilities) * 100, 2)
-        result = "REAL" if prediction == 1 else "FAKE"
-
-        # Display result
-        if prediction == 1:
-            st.success(f"✅ This news looks REAL (Confidence: {confidence}%)")
-        else:
-            st.error(f"🚨 This news looks FAKE (Confidence: {confidence}%)")
-
-        # Save to history
-        st.session_state.history.append({
-            "News": user_input,
-            "Prediction": result,
-            "Confidence (%)": confidence
-        })
+# 5. Input validation & prediction
+if st.button("Predict"):
+    if not user_input.strip():
+        st.warning("⚠️ Please enter some text to classify.")
+    elif len(user_input.strip()) < 5:
+        st.info("ℹ️ Input too short to classify reliably.")
     else:
-        st.warning("⚠️ Please enter some text to analyze.")
+        prediction = model.predict([user_input])[0]
+        if prediction == 1:
+            st.success("✅ Prediction: Real News")
+        else:
+            st.error("❌ Prediction: Fake News")
 
-# Show history
-if st.session_state.history:
-    st.subheader("📝 Prediction History")
-    history_df = pd.DataFrame(st.session_state.history)
-    st.table(history_df)
-
-    # Download button
-    csv = history_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Download History as CSV",
-        data=csv,
-        file_name='prediction_history.csv',
-        mime='text/csv'
-    )
+# 6. Footer / credits
+st.markdown("---")
+st.markdown("Made with ❤️ by Pramila Das")
