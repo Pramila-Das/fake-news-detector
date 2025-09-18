@@ -4,6 +4,19 @@ import smtplib
 from email.message import EmailMessage
 import os
 
+# ---------------------------
+# Sidebar Info
+# ---------------------------
+st.sidebar.title("About Project")
+st.sidebar.write("Dataset: `data.csv`")
+st.sidebar.write("Model Accuracy: 97%")
+st.sidebar.write("Built by Pramila Das")
+
+# ---------------------------
+# Main App
+# ---------------------------
+st.title("Fake News Detector")
+
 st.header("Contribute a News Article")
 
 # Input fields
@@ -20,7 +33,7 @@ if st.button("Submit"):
         # 1. Save contribution to CSV
         new_data = pd.DataFrame({
             "content": [contrib_text],
-            "label": [1 if contrib_label=="Real" else 0],
+            "label": [1 if contrib_label == "Real" else 0],
             "email": [contrib_email]
         })
 
@@ -58,3 +71,13 @@ Pramila Das
             st.info("A confirmation email has been sent to your email!")
         except Exception as e:
             st.error(f"Error sending email: {e}")
+
+# ---------------------------
+# Display Contributions
+# ---------------------------
+st.header("All Contributions")
+if os.path.exists("user_contributions.csv"):
+    contrib_df = pd.read_csv("user_contributions.csv")
+    st.dataframe(contrib_df)
+else:
+    st.info("No contributions yet.")
