@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import pickle
 import smtplib
 from email.message import EmailMessage
 import os
@@ -13,18 +14,36 @@ st.sidebar.write("Model Accuracy: 97%")
 st.sidebar.write("Built by Pramila Das")
 
 # ---------------------------
+# Load Model
+# ---------------------------
+with open("fake_news_model.pkl", "rb") as f:
+    model = pickle.load(f)
+
+# ---------------------------
 # Main App
 # ---------------------------
 st.title("Fake News Detector")
 
+# Input field for prediction
+st.header("Check if a News Article is Fake or Real")
+news_text = st.text_area("Enter the news headline + body here:")
+
+if st.button("Predict"):
+    if news_text.strip() == "":
+        st.warning("Please enter some text to predict.")
+    else:
+        prediction = model.predict([news_text])[0]
+        result = "Real" if prediction == 1 else "Fake"
+        st.success(f"The news is predicted as: **{result}**")
+
+# Contribution section
 st.header("Contribute a News Article")
 
-# Input fields
-contrib_text = st.text_area("News Headline + Body")
-contrib_label = st.radio("Label", ["Real", "Fake"])
-contrib_email = st.text_input("Your Email (optional)")
+contrib_text = st.text_area("News Headline + Body", key="contrib_text")
+contrib_label = st.radio("Label", ["Real", "Fake"], key="contrib_label")
+contrib_email = st.text_input("Your Email (optional)", key="contrib_email")
 
-if st.button("Submit"):
+if st.button("Submit Contribution"):
     if contrib_text.strip() == "":
         st.warning("Please enter the news content.")
     elif contrib_email.strip() == "":
