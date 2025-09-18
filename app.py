@@ -1,80 +1,60 @@
 import streamlit as st
 import pandas as pd
-import pickle
-import os
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from email.message import EmailMessage
+import os
 
-# ------------------ App Header ------------------
-st.title("📰 Fake News Detector")
-st.sidebar.title("About Project")
-st.sidebar.write("Dataset: `data.csv`")
-st.sidebar.write("Model Accuracy: 97%")
-st.sidebar.write("Built by Pramila Das")
-
-# ------------------ Load Model ------------------
-@st.cache_resource
-def load_model():
-    with open("fake_news_model.pkl", "rb") as f:
-        return pickle.load(f)
-
-model = load_model()
-
-# ------------------ News Prediction ------------------
-st.header("Check News Article")
-news_text = st.text_area("Enter news text here:")
-
-if st.button("Predict"):
-    if not news_text.strip():
-        st.warning("Please enter a news article to predict.")
-    else:
-        prediction = model.predict([news_text])[0]
-        st.write("Prediction:", "Fake ❌" if prediction == 0 else "Real ✅")
-
-# ------------------ Contribution Section ------------------
 st.header("Contribute a News Article")
 
-user_email = st.text_input("Your Email")
-contrib_text = st.text_area("News Article Text")
-label = st.selectbox("Label", ["Fake", "Real"])
+# Input fields
+contrib_text = st.text_area("News Headline + Body")
+contrib_label = st.radio("Label", ["Real", "Fake"])
+contrib_email = st.text_input("Your Email (optional)")
 
-csv_file = "user_contributions.csv"
-
-# Ensure CSV exists
-if not os.path.exists(csv_file):
-    pd.DataFrame(columns=["Email", "News", "Label"]).to_csv(csv_file, index=False)
-
-if st.button("Submit Contribution"):
-    if not user_email or not contrib_text.strip():
-        st.warning("Please enter both email and news text.")
+if st.button("Submit"):
+    if contrib_text.strip() == "":
+        st.warning("Please enter the news content.")
+    elif contrib_email.strip() == "":
+        st.warning("Please enter your email to receive a confirmation.")
     else:
-        # Append contribution
-        new_entry = pd.DataFrame([[user_email, contrib_text, label]], columns=["Email", "News", "Label"])
-        new_entry.to_csv(csv_file, mode='a', header=False, index=False)
-        st.success("Thank you for your contribution!")
+        # 1. Save contribution to CSV
+        new_data = pd.DataFrame({
+            "content": [contrib_text],
+            "label": [1 if contrib_label=="Real" else 0],
+            "email": [contrib_email]
+        })
 
-        # Send email notification
-        EMAIL_USER = os.getenv("EMAIL_USER")  # Or st.secrets["EMAIL_USER"]
-        EMAIL_PASS = os.getenv("EMAIL_PASS")  # Or st.secrets["EMAIL_PASS"]
-
-        if not EMAIL_USER or not EMAIL_PASS:
-            st.warning("Email not sent. EMAIL_USER or EMAIL_PASS not set.")
+        if not os.path.exists("user_contributions.csv"):
+            new_data.to_csv("user_contributions.csv", index=False)
         else:
-            try:
-                msg = MIMEMultipart()
-                msg['From'] = EMAIL_USER
-                msg['To'] = user_email
-                msg['Subject'] = "Thank you for contributing to Fake News Detector"
-                body = f"Hi,\n\nThank you for contributing a news article.\n\nYour submission:\n{contrib_text}\nLabel: {label}\n\nBest,\nFake News Detector Team"
-                msg.attach(MIMEText(body, 'plain'))
+            new_data.to_csv("user_contributions.csv", mode='a', header=False, index=False)
 
-                server = smtplib.SMTP('smtp.gmail.com', 587)
-                server.starttls()
-                server.login(EMAIL_USER, EMAIL_PASS)
-                server.send_message(msg)
-                server.quit()
+        st.success("Thank you for contributing!")
 
-                st.success("Confirmation email sent!")
-            except Exception as e:
-                st.error(f"Error sending email: {e}")
+        # 2. Send thank-you email
+        try:
+            EMAIL_USER = os.getenv("EMAIL_USER")  # Your Gmail
+            EMAIL_PASS = os.getenv("EMAIL_PASS")  # Your App Password
+
+            msg = EmailMessage()
+            msg['Subject'] = "Thank you for contributing to Fake News Detector!"
+            msg['From'] = EMAIL_USER
+            msg['To'] = contrib_email
+            msg.set_content(f"""
+Hi!
+
+Thank you for contributing a news article labeled as '{contrib_label}' to our dataset.
+
+We really appreciate your help in improving our Fake News Detector project.
+
+Best regards,
+Pramila Das
+""")
+
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                smtp.login(EMAIL_USER, EMAIL_PASS)
+                smtp.send_message(msg)
+
+            st.info("A confirmation email has been sent to your email!")
+        except Exception as e:
+            st.error(f"Error sending email: {e}")
